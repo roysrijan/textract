@@ -19,7 +19,7 @@ export default class UploadFiles extends Component {
   }
 
   componentDidMount() {
-    
+
   }
 
   upload() {
@@ -67,7 +67,7 @@ export default class UploadFiles extends Component {
       this.state;
 
     return (
-      <div>
+      <div className="container">
         {currentFile && (
           <div className="progress mb-3">
             <div
@@ -115,7 +115,7 @@ export default class UploadFiles extends Component {
             <ul className="list-group list-group-flush">
               {fileInfos.map((file, index) => (
                 <li className="list-group-item" key={index}>
-                  <a href="javasciprt:;" onClick={()=>this.props.setTab('search')}>{file.name}</a>
+                  <a href="javasciprt:;" onClick={() => this.props.setTab('search')}>{file.name}</a>
                 </li>
               ))}
             </ul>

@@ -1,13 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './style.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import UploadFiles from './components/upload-files.component';
 import SearchFiles from './components/search-files.component';
+import axios from 'axios';
 
 function App() {
   const [tab, setTab] = useState('home');
   const [blocks, setBlocks] = useState([]);
+  const [files, setFiles] = useState();
+  useEffect(() => {
+    axios.get('https://v618j3wl9d.execute-api.ap-south-1.amazonaws.com/dev/feedback').then(res => {
+      setFiles(res.data.Contents);
+    })
+  }, []);
+  const handleClick = (Key) => {
+    axios.post('https://v618j3wl9d.execute-api.ap-south-1.amazonaws.com/dev/feedback', {
+      Key
+    }).then(res => {
+      setBlocks(res.data.Blocks);
+      setTab('search');
+    })
+  };
   return (
     <>
       <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -25,14 +40,11 @@ function App() {
               <a class="nav-link" href="javascript:;">Search</a>
             </li>
             <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <a class="nav-link dropdown-toggle" href="javascript:;" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 Documents
               </a>
               <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                <a class="dropdown-item" href="#">Action</a>
-                <a class="dropdown-item" href="#">Another action</a>
-                <div class="dropdown-divider"></div>
-                <a class="dropdown-item" href="#">Something else here</a>
+                {files && files.map(ele => (<a class="dropdown-item" href="javascript:;" onClick={() => { console.log(ele); handleClick(ele.Key) }}>{ele.Key}</a>))}
               </div>
             </li>
             <li class="nav-item">
@@ -45,7 +57,7 @@ function App() {
           </form>
         </div>
       </nav>
-      <div className="container" style={{ width: '400px' }}>
+      <div className={tab === 'home' ? "container" : ""} style={{ width: '400px' }}>
         <div style={{ margin: '20px 0' }}>
           {tab === 'home' ? <h4>Textract Drag & Drop File Upload</h4> : <h4>Search File Information</h4>}
         </div>
