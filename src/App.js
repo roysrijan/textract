@@ -5,6 +5,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import UploadFiles from './components/upload-files.component';
 import SearchFiles from './components/search-files.component';
 import axios from 'axios';
+import DateArea from './components/dashboard.component';
 
 function App() {
   const [tab, setTab] = useState('home');
@@ -47,8 +48,8 @@ function App() {
                 {files && files.map(ele => (<a class="dropdown-item" href="javascript:;" onClick={() => { console.log(ele); handleClick(ele.Key) }}>{ele.Key}</a>))}
               </div>
             </li>
-            <li class="nav-item">
-              <a class="nav-link disabled" href="#">Dashboard</a>
+            <li class={`nav-item ${tab === 'dashboard' ? 'active' : ''}`} onClick={() => setTab('dashboard')}>
+              <a class="nav-link" href="javascript:;">Dashboard</a>
             </li>
           </ul>
           <form class="form-inline my-2 my-lg-0">
@@ -58,11 +59,15 @@ function App() {
         </div>
       </nav>
       <div className={tab === 'home' ? "container" : ""} style={{ width: '400px' }}>
-        <div style={{ margin: '20px 0' }}>
-          {tab === 'home' ? <h4>Textract Drag & Drop File Upload</h4> : <h4>Search File Information</h4>}
+        <div style={{ margin: tab === 'home' ? '20px 0' : '20px' }}>
+          {tab === 'home' ? <h4>Textract Drag & Drop File Upload</h4> :
+            tab === 'search' ? <h4>Search File Information</h4> :
+              <h4>KPIs</h4>}
         </div>
 
-        {tab === 'home' ? <UploadFiles setTab={setTab} setBlocks={setBlocks} /> : <SearchFiles blocks={blocks} />}
+        {tab === 'home' ? <UploadFiles setTab={setTab} setBlocks={setBlocks} /> :
+          tab === 'search' ? <SearchFiles blocks={blocks} /> :
+            <DateArea tab={tab} />}
       </div>
     </>
   );

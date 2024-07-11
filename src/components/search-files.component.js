@@ -98,7 +98,7 @@ const SearchFiles = ({ blocks }) => {
     }
     if (!query) setTable(csv)
     else setTable(csv.filter(o => Object.values(o).filter((e) => e["S"].includes(query))[0]))
-  }, [query]);
+  }, [query, blocks]);
   return (
     <div className="container">
       <form class="form-inline my-2 my-lg-0" onInput={(e) => setQuery(e.target.value)}>
