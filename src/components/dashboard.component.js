@@ -81,7 +81,7 @@ const DateArea = ({ tab }) => {
                 if (map.get(ele)) map.set(ele, map.get(ele) + 1);
                 else map.set(ele, 1);
             });
-            var result = Array.from(map).map(o => ({ date: new Date(o[0]).toLocaleDateString(), val: o[1] })).sort((a, b) => a.date.getTime() - b.date.getTime());
+            var result = Array.from(map).map(o => ({ date: new Date(o[0]).getTime(), val: o[1] })).sort((a, b) => a.date - b.date);
             setData(result);
         })
     }, [tab]);
