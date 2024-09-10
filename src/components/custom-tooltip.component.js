@@ -14,7 +14,7 @@ const CustomTooltip = props => {
     return (
       <div className="area-chart-tooltip" style={style}>
         <p>
-          {currData ? format(new Date(currData.date), "yyyy-MM-dd") : " -- "}
+          {currData && currData.date ? format(new Date(currData.date), "yyyy-MM-dd") : " -- "}
         </p>
         <p>
           {"value : "}

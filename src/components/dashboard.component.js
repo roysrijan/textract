@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { add, format, differenceInCalendarDays } from "date-fns";
 import {
     AreaChart,
@@ -9,10 +9,11 @@ import {
     ResponsiveContainer
 } from "recharts";
 import CustomTooltip from "./custom-tooltip.component";
-import axios from 'axios';
+import usePagination from "../services/pagination.service";
+import axios from "axios";
 
 const dateFormatter = date => {
-    return format(new Date(date), "dd/MMM");
+    return format(new Date(date), "dd/MM/yyyy");
 };
 
 /**
@@ -61,36 +62,29 @@ const fillTicksData = (_ticks, data) => {
     return filled;
 };
 
-const DateArea = ({ tab }) => {
+const DateArea = ({ table, attr, data }) => {
     const startDate = new Date(2000, 0, 11);
     const endDate = new Date(2025, 9, 15);
-    const [attr, setAttr] = useState([]);
-    const [table, setTable] = useState([]);
-    const [data, setData] = useState([]);
     const [query, setQuery] = useState();
+    const [show, setShow] = useState();
+    const [form, setForm] = useState({});
     const [selectedAttr, setSelectedAttr] = useState();
-    useEffect(() => {
-        axios.post('https://v618j3wl9d.execute-api.ap-south-1.amazonaws.com/dev/feedback', {
-
-        }).then(res => {
-            setAttr(res.data.attributeNames);
-            setTable(res.data.items);
-            var temp = res.data.items.map(o => o.Date.S.split('/')[1] + '/' + o.Date.S.split('/')[0] + '/' + o.Date.S.split('/')[2]);
-            var map = new Map();
-            temp.forEach(ele => {
-                if (map.get(ele)) map.set(ele, map.get(ele) + 1);
-                else map.set(ele, 1);
-            });
-            var result = Array.from(map).map(o => ({ date: new Date(o[0]).getTime(), val: o[1] })).sort((a, b) => a.date - b.date);
-            setData(result);
-        })
-    }, [tab]);
+    const { next, prev, jump, currentData, currentPage, maxPage } = usePagination(table, 10);
 
     const handleClick = (query) => {
         setQuery(query);
         setTable(table.filter(o => Object.values(o).filter((e) => e["S"].includes(query))[0]))
     };
 
+    const handleSubmit = () => {
+        axios.put('https://v618j3wl9d.execute-api.ap-south-1.amazonaws.com/dev/feedback',
+            JSON.stringify(form),
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            }).then((res) => setShow(false));
+    };
 
     const domain = [dataMin => dataMin, () => endDate.getTime()];
     const ticks = getTicks(startDate, endDate, 5);
@@ -111,63 +105,121 @@ const DateArea = ({ tab }) => {
                 <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
             </form>
 
-            {query && <table className="table">
-                {table && table.length > 0 && Object.keys(table[0]).map(ele => (
-                    <th>{ele}</th>
-                ))}
-                <tbody>
-                    {
-                        table && table.length > 0 && table
-                            .map(ele => (
-                                <tr>
-                                    {Object.keys(ele).map(index => (
-                                        <td className="col">{ele[index]["S"]}</td>
-                                    ))}
-                                </tr>
-                            ))
-                    }
-                </tbody>
-            </table>}
+            <div className="d-flex justify-content-between">
+                <div className="">
+                    <div className="action">
+                        <button type="button" className="btn btn-success" data-bs-toggle="modal" data-bs-target="#exampleModal" onClick={() => setShow(true)}>Check In</button>
+                        <button type="button" className="btn btn-warning">Check Out</button>
 
+                        <div class="modal" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" style={{ display: show ? "block" : "none" }}>
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title" id="exampleModalLabel">Key Registration</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <form>
+                                            <div class="mb-3">
+                                                <label for="recipient-name" class="col-form-label">KeyNo:</label>
+                                                <input type="text" class="form-control" id="recipient-name" onChange={(e) => setForm({ ...form, KeyNO: e.target.value })} />
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="message-text" class="col-form-label">EmployeeName:</label>
+                                                <input type="text" class="form-control" id="message-text" onChange={(e) => setForm({ ...form, Employeesame: e.target.value })} />
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="message-text" class="col-form-label">IssueDate:</label>
+                                                <input type="date" class="form-control" id="message-text" onChange={(e) => setForm({ ...form, Date: dateFormatter(e.target.value) })} />
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="message-text" class="col-form-label">ReturnDate:</label>
+                                                <input type="date" class="form-control" id="message-text" onChange={(e) => setForm({ ...form, ReturnedDiets: dateFormatter(e.target.value) })} />
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" onClick={() => setShow(false)}>Close</button>
+                                        <button type="button" class="btn btn-primary" onClick={handleSubmit}>Send message</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {<table className="table">
+                        {currentData() && currentData().length > 0 && Object.keys(currentData()[0]).map(ele => (
+                            <th>{ele}</th>
+                        ))}
+                        <tbody>
+                            {
+                                currentData() && currentData().length > 0 && currentData()
+                                    .map(ele => (
+                                        <tr>
+                                            {Object.keys(ele).map(index => (
+                                                <td className="col">{ele[index]["S"]}</td>
+                                            ))}
+                                        </tr>
+                                    ))
+                            }
+                        </tbody>
+                    </table>}
+                    <nav aria-label="...">
+                        <ul class="pagination">
+                            <li class="page-item">
+                                <a class="page-link" href="javascript:;" tabindex="-1" onClick={prev}>Previous</a>
+                            </li>
+                            {Array.from(Array(maxPage), (_, i) => i + 1).map(ele =>
+                                <li class={`page-item ${ele === currentPage ? 'active' : ''}`}>
+                                    <a class="page-link" href="javascript:;" onClick={() => jump(ele)}>{ele}</a>
+                                </li>)}
+                            <li class="page-item">
+                                <a class="page-link" href="javascript:;" onClick={next}>Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
 
-            <p className="mt-4">AreaChart with custom tooltip</p>
-            <ResponsiveContainer width="90%" height={200}>
-                <AreaChart
-                    width={900}
-                    height={250}
-                    data={data}
-                    margin={{
-                        top: 10,
-                        right: 0,
-                        bottom: 10,
-                        left: 0
-                    }}
-                >
-                    <defs>
-                        <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                            <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
-                            <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
-                        </linearGradient>
-                    </defs>
-                    <XAxis
-                        dataKey="date"
+                <div>
+                    <p className="mt-4">AreaChart with custom tooltip</p>
+                    <ResponsiveContainer width={400} height={200}>
+                        <AreaChart
+                            width={900}
+                            height={250}
+                            data={data}
+                            margin={{
+                                top: 10,
+                                right: 0,
+                                bottom: 10,
+                                left: 0
+                            }}
+                        >
+                            <defs>
+                                <linearGradient id="colorUv" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
+                                    <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="colorPv" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
+                                    <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+                            <XAxis
+                                dataKey="date"
 
-                    />
-                    <YAxis />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Area
-                        type="monotone"
-                        dataKey="val"
-                        stroke="#8884d8"
-                        fill="url(#colorUv)"
-                        fillOpacity={0.6}
-                    />
-                </AreaChart>
-            </ResponsiveContainer>
+                            />
+                            <YAxis />
+                            <Tooltip content={<CustomTooltip />} />
+                            <Area
+                                type="monotone"
+                                dataKey="val"
+                                stroke="#8884d8"
+                                fill="url(#colorUv)"
+                                fillOpacity={0.6}
+                            />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
         </div>
     );
 };
