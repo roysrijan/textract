@@ -6,6 +6,7 @@ import UploadFiles from './components/upload-files.component';
 import SearchFiles from './components/search-files.component';
 import axios from 'axios';
 import DateArea from './components/dashboard.component';
+import { differenceInCalendarDays } from 'date-fns';
 
 function App() {
   const [tab, setTab] = useState('home');
@@ -20,24 +21,39 @@ function App() {
     })
     axios.post('https://v618j3wl9d.execute-api.ap-south-1.amazonaws.com/dev/feedback', {
 
-        }).then(res => {
-            let table = res.data.items.map(e=>({ 
-                KeyNo: e["KeyNO"], 
-                EmployeeName: e["Employeesame"],
-                ReturnDate: e["ReturnedDiets"],
-                IssueDate: e["Date"]
-            }));
-            setAttr(res.data.attributeNames);
-            setTable(table);
-            var temp = res.data.items.map(o => o.Date.S.split('/')[1] + '/' + o.Date.S.split('/')[0] + '/' + o.Date.S.split('/')[2]);
-            var map = new Map();
-            temp.forEach(ele => {
-                if (map.get(ele)) map.set(ele, map.get(ele) + 1);
-                else map.set(ele, 1);
-            });
-            var result = Array.from(map).map(o => ({ date: new Date(o[0]).getTime(), val: o[1] })).sort((a, b) => a.date - b.date);
-            setData(result);
-        })
+    }).then(res => {
+      let table = res.data.items.map(e => ({
+        KeyNo: e["KeyNO"]["S"],
+        EmployeeName: e["Employeesame"]["S"],
+        ReturnDate: e["ReturnedDiets"]["S"],
+        IssueDate: e["Date"]["S"]
+      })).sort((a, b) => a.KeyNo - b.KeyNo);
+
+      table = table.filter((ele, i, arr) => {
+        if (!ele.KeyNo) return;
+        let map = arr.filter(e => e.KeyNo === ele.KeyNo);
+        if (map.length > 1) {
+          map.sort((a, b) => {
+            let d1 = a.IssueDate.replace(/^(\d{1,2}\/)(\d{1,2}\/)(\d{4})$/, "$2$1$3")
+            let d2 = b.IssueDate.replace(/^(\d{1,2}\/)(\d{1,2}\/)(\d{4})$/, "$2$1$3")
+            return (-differenceInCalendarDays(new Date(d1), new Date(d2)))
+          });
+          return map[0].IssueDate === ele.IssueDate;
+        }
+        else return ele;
+      })
+
+      setAttr(res.data.attributeNames);
+      setTable(table);
+      var temp = res.data.items.map(o => o.Date.S.split('/')[1] + '/' + o.Date.S.split('/')[0] + '/' + o.Date.S.split('/')[2]);
+      var map = new Map();
+      temp.forEach(ele => {
+        if (map.get(ele)) map.set(ele, map.get(ele) + 1);
+        else map.set(ele, 1);
+      });
+      var result = Array.from(map).map(o => ({ date: new Date(o[0]).getTime(), val: o[1] })).sort((a, b) => a.date - b.date);
+      setData(result);
+    })
   }, []);
   const handleClick = (Key) => {
     axios.post('https://v618j3wl9d.execute-api.ap-south-1.amazonaws.com/dev/feedback', {
@@ -88,7 +104,7 @@ function App() {
               <h4>Textract Drag & Drop File Upload</h4>}
         </div>
 
-        {tab === 'home' ? <DateArea table={table} attr={attr} data={data} /> :
+        {tab === 'home' ? <DateArea table={table} attr={attr} data={data} setTable={setTable} /> :
           tab === 'search' ? <SearchFiles blocks={blocks} /> :
             <UploadFiles setTab={setTab} setBlocks={setBlocks} />}
       </div>

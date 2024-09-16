@@ -112,6 +112,7 @@ const SearchFiles = ({ blocks }) => {
         <tbody>
           {
             table && table.length > 0 && table
+              .slice(1, table.length)
               .map(ele => (
                 <tr>
                   {Object.keys(ele).map(index => (

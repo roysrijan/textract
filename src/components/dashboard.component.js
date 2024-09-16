@@ -62,7 +62,7 @@ const fillTicksData = (_ticks, data) => {
     return filled;
 };
 
-const DateArea = ({ table, attr, data }) => {
+const DateArea = ({ table, attr, data, setTable }) => {
     const startDate = new Date(2000, 0, 11);
     const endDate = new Date(2025, 9, 15);
     const [query, setQuery] = useState();
@@ -73,7 +73,7 @@ const DateArea = ({ table, attr, data }) => {
 
     const handleClick = (query) => {
         setQuery(query);
-        setTable(table.filter(o => Object.values(o).filter((e) => e["S"].includes(query))[0]))
+        setTable(table.filter(o => Object.values(o).filter((e) => e.includes(query))[0]))
     };
 
     const handleSubmit = () => {
@@ -156,7 +156,7 @@ const DateArea = ({ table, attr, data }) => {
                                     .map(ele => (
                                         <tr>
                                             {Object.keys(ele).map(index => (
-                                                <td className="col">{ele[index]["S"]}</td>
+                                                <td className="col">{ele[index]}</td>
                                             ))}
                                         </tr>
                                     ))
