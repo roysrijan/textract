@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import Dropzone from 'react-dropzone';
+import { HfInference } from "@huggingface/inference";
 
 import UploadService from '../services/upload-files.service';
 
@@ -14,6 +15,8 @@ export default class UploadFiles extends Component {
       currentFile: undefined,
       progress: 0,
       message: '',
+      query: '',
+      answer: '',
       fileInfos: [],
     };
   }
@@ -62,8 +65,53 @@ export default class UploadFiles extends Component {
     }
   }
 
+  async handleQuestion(e) {
+    if (e.key === 'Enter') {
+      console.log(e);
+      this.setState({ query: e.target.value });
+      const client = new HfInference("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")
+
+      let out = "";
+
+      const stream = client.chatCompletionStream({
+        model: "meta-llama/Llama-3.2-11B-Vision-Instruct",
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: e.target.value.replace('/n', '')
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: 'https://s3.ap-south-1.amazonaws.com/leasing.solution/' + this.state.fileInfos[0].name
+                }
+              }
+            ]
+          }
+        ],
+        max_tokens: 500
+      });
+
+      let content = "";
+      for await (const chunk of stream) {
+        if (chunk.choices && chunk.choices.length > 0) {
+          const newContent = chunk.choices[0].delta.content;
+          out += newContent;
+          content += " " + newContent;
+          console.log(newContent);
+        }
+      }
+      this.setState({ answer: content });
+      e.preventDefault();
+      e.target.blur();
+    }
+  }
+
   render() {
-    const { selectedFiles, currentFile, progress, message, fileInfos } =
+    const { selectedFiles, currentFile, progress, query, answer, fileInfos } =
       this.state;
 
     return (
@@ -83,7 +131,7 @@ export default class UploadFiles extends Component {
           </div>
         )}
 
-        <Dropzone onDrop={this.onDrop} multiple={false}>
+        {!this.state.currentFile && <Dropzone onDrop={this.onDrop} multiple={false}>
           {({ getRootProps, getInputProps }) => (
             <section>
               <div {...getRootProps({ className: 'dropzone' })}>
@@ -107,7 +155,7 @@ export default class UploadFiles extends Component {
               </aside>
             </section>
           )}
-        </Dropzone>
+        </Dropzone>}
 
         {fileInfos?.length > 0 && (
           <div className="card">
@@ -115,12 +163,22 @@ export default class UploadFiles extends Component {
             <ul className="list-group list-group-flush">
               {fileInfos.map((file, index) => (
                 <li className="list-group-item" key={index}>
+                  <img src={'https://s3.ap-south-1.amazonaws.com/leasing.solution/' + file.name} width={300} height={213} />
                   <a href="javasciprt:;" onClick={() => this.props.setTab('search')}>{file.name}</a>
                 </li>
               ))}
             </ul>
           </div>
         )}
+
+        {query && <div class="d-flex align-items-start mt-1 mb-1">Me: <samp><span class="badge bg-light mt-1">{query}</span></samp></div>}
+
+        {answer && <div class="d-flex align-items-end mt-1 mb-1">Docy: <samp><span class="badge bg-light">{answer}</span></samp></div>}
+
+        {fileInfos?.length > 0 && (<div class="mt-3 mb-3">
+          <label for="exampleFormControlTextarea1" class="form-label">Message Docy</label>
+          <textarea class="form-control" id="exampleFormControlTextarea1" rows="3" onKeyDown={e => this.handleQuestion(e)}></textarea>
+        </div>)}
       </div>
     );
   }

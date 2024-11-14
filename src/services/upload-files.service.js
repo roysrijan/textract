@@ -12,7 +12,7 @@ class UploadFilesService {
       reader.onload = async () => {
         const base64Image = reader.result.split(',')[1];
         const response = await axios.post('https://v618j3wl9d.execute-api.ap-south-1.amazonaws.com/dev/upload',
-          JSON.stringify({ image: base64Image, name: file.name.split('.')[0] }),
+          JSON.stringify({ image: base64Image, name: file.name, type: file.type }),
           {
             headers: {
               'Content-Type': 'application/json',
