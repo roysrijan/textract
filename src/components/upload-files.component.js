@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import Dropzone from 'react-dropzone';
-import { HfInference } from "@huggingface/inference";
-
 import UploadService from '../services/upload-files.service';
+import axios from 'axios';
 
 export default class UploadFiles extends Component {
   constructor(props) {
@@ -17,6 +16,7 @@ export default class UploadFiles extends Component {
       message: '',
       query: '',
       answer: '',
+      clear: false,
       fileInfos: [],
     };
   }
@@ -65,58 +65,35 @@ export default class UploadFiles extends Component {
     }
   }
 
-  async handleQuestion(e) {
+  async handleKeyDown(e) {
     if (e.key === 'Enter') {
       console.log(e);
-      this.setState({ query: e.target.value });
-      const client = new HfInference("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")
-
-      let out = "";
-
-      const stream = client.chatCompletionStream({
-        model: "meta-llama/Llama-3.2-11B-Vision-Instruct",
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: e.target.value.replace('/n', '')
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: 'https://s3.ap-south-1.amazonaws.com/leasing.solution/' + this.state.fileInfos[0].name
-                }
-              }
-            ]
-          }
-        ],
-        max_tokens: 500
-      });
-
-      let content = "";
-      for await (const chunk of stream) {
-        if (chunk.choices && chunk.choices.length > 0) {
-          const newContent = chunk.choices[0].delta.content;
-          out += newContent;
-          content += " " + newContent;
-          console.log(newContent);
-        }
-      }
-      this.setState({ answer: content });
+      e.target.value = "";
       e.preventDefault();
       e.target.blur();
+      this.handleQuestion();
     }
   }
 
+  async handleQuestion() {
+    this.setState({ answer: ".....", clear: true });
+
+    const resp = await axios.post('https://peak-theorem-441815-t4.uc.r.appspot.com', {
+      file_name: 'https://s3.ap-south-1.amazonaws.com/leasing.solution/' + this.state.fileInfos[0].name,
+      file_type: this.state.fileInfos[0].type,
+      text: this.state.query.replace('/n', '')
+    });
+    console.log("vertextai response:", resp.data);
+    this.setState({ answer: resp.data.message });
+  }
+
   render() {
-    const { selectedFiles, currentFile, progress, query, answer, fileInfos } =
+    const { selectedFiles, currentFile, progress, query, answer, clear, fileInfos } =
       this.state;
 
     return (
       <div className="container">
-        {currentFile && (
+        {currentFile && fileInfos?.length === 0 && (
           <div className="progress mb-3">
             <div
               className="progress-bar progress-bar-info progress-bar-striped"
@@ -131,7 +108,7 @@ export default class UploadFiles extends Component {
           </div>
         )}
 
-        {!this.state.currentFile && <Dropzone onDrop={this.onDrop} multiple={false}>
+        {!currentFile && <Dropzone onDrop={this.onDrop} multiple={false}>
           {({ getRootProps, getInputProps }) => (
             <section>
               <div {...getRootProps({ className: 'dropzone' })}>
@@ -171,13 +148,24 @@ export default class UploadFiles extends Component {
           </div>
         )}
 
-        {query && <div class="d-flex align-items-start mt-1 mb-1">Me: <samp><span class="badge bg-light mt-1">{query}</span></samp></div>}
+        {clear && query && <div class="d-flex align-items-start mt-1 mb-1"><samp>Me: <span class="badge bg-light text-wrap" style={{ textAlign: "left" }}>{query}</span></samp></div>}
 
-        {answer && <div class="d-flex align-items-end mt-1 mb-1">Docy: <samp><span class="badge bg-light">{answer}</span></samp></div>}
+        {clear && answer && <div class="d-flex align-items-end mt-1 mb-1"><samp>Docy: <span class="badge bg-light text-wrap" style={{ textAlign: "left" }}>{answer}</span></samp></div>}
 
         {fileInfos?.length > 0 && (<div class="mt-3 mb-3">
-          <label for="exampleFormControlTextarea1" class="form-label">Message Docy</label>
-          <textarea class="form-control" id="exampleFormControlTextarea1" rows="3" onKeyDown={e => this.handleQuestion(e)}></textarea>
+          <label for="exampleFormControlTextarea1" class="form-label"><b>What can I help with?</b></label>
+          <textarea
+            class="form-control"
+            placeholder="Message Docy"
+            id="exampleFormControlTextarea1"
+            rows="3"
+            value={clear ? '' : query}
+            onChange={e => this.setState({ query: e.target.value, clear: false })}
+            onKeyDown={e => this.handleKeyDown(e)}
+          />
+          <button class="floating-btn" onClick={() => this.handleQuestion()}>
+            <i class="bi bi-arrow-right"></i>
+          </button>
         </div>)}
       </div>
     );

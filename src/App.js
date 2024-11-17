@@ -97,16 +97,16 @@ function App() {
           </form>
         </div>
       </nav>
-      <div className={tab === 'upload' ? "container" : ""} style={{ width: '400px' }}>
-        <div style={{ margin: tab === 'upload' ? '20px 0' : '20px' }}>
-          {tab === 'home' ? <h4>KPIs</h4> :
+      <div className={tab === 'home' ? "container" : ""} style={{ width: '400px' }}>
+        <div style={{ margin: tab === 'home' ? '20px 0' : '20px' }}>
+          {tab === 'home' ?  <h4>Textract Drag & Drop File Upload</h4>:
             tab === 'search' ? <h4>Search File Information</h4> :
-              <h4>Textract Drag & Drop File Upload</h4>}
+              <h4>KPIs</h4>}
         </div>
 
-        {tab === 'home' ? <DateArea table={table} attr={attr} data={data} setTable={setTable} /> :
+        {tab === 'home' ? <UploadFiles setTab={setTab} setBlocks={setBlocks} />:
           tab === 'search' ? <SearchFiles blocks={blocks} /> :
-            <UploadFiles setTab={setTab} setBlocks={setBlocks} />}
+            <DateArea table={table} attr={attr} data={data} setTable={setTable} /> }
       </div>
     </>
   );

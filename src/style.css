@@ -24,3 +24,16 @@
   width: 470px;
   column-gap: 10px;
 }
+
+.floating-btn {
+  position: relative;
+  bottom: 35px;        /* Distance from the bottom of the container */
+  left: 300px;         /* Distance from the right of the container */
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  padding: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
